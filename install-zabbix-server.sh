@@ -70,12 +70,11 @@ mkdir -p /var/zabbix/alertscripts
 mkdir -p /var/zabbix/externalscripts
 chown -R zabbix:zabbix /var/zabbix/
 
-cd
 wget http://downloads.sourceforge.net/project/zabbix/ZABBIX%20Latest%20Stable/3.4.4/zabbix-3.4.4.tar.gz
-tar -vzxf zabbix-*.tar.gz -C ~
-cd ~/zabbix-*/database/mysql
+tar -vzxf zabbix-3*.tar.gz -C ~
+cd ~/zabbix-3*/database/mysql
 
-cd ~/zabbix-*/database/mysql
+cd ~/zabbix-3*/database/mysql
 echo processing schema.sql
 time mysql -uzabbix -pdrFJ7xx5MNTbqJ39 zabbix < schema.sql
 echo processing images.sql
@@ -83,12 +82,12 @@ time mysql -uzabbix -pdrFJ7xx5MNTbqJ39 zabbix < images.sql
 echo processing data.sql
 time mysql -uzabbix -pdrFJ7xx5MNTbqJ39 zabbix < data.sql
 
-cd ~/zabbix-*/
+cd ~/zabbix-3*/
 ./configure --enable-server --enable-agent --with-mysql --with-libcurl --with-libxml2 --with-ssh2 --with-net-snmp --with-openipmi --with-jabber
 
 time make install &&
 
-cp ~/zabbix-*/misc/init.d/debian/* /etc/init.d/
+cp ~/zabbix-3*/misc/init.d/debian/* /etc/init.d/
 
 update-rc.d zabbix-server defaults
 update-rc.d zabbix-agent defaults
@@ -107,7 +106,7 @@ grep -v "^#\|^$" /usr/local/etc/zabbix_server.conf
 echo
 
 mkdir /var/www/html/zabbix
-cd ~/zabbix-*/frontends/php/
+cd ~/zabbix-3*/frontends/php/
 cp -a . /var/www/html/zabbix/
 chown -R www-data:www-data /var/www
 
