@@ -1,4 +1,6 @@
 #!/bin/bash
+#apt-get update -y && apt-get install git -y && cd && git clone https://github.com/catonrug/zabbix-mariadb-nginx-raspbian-stretch.git && cd zabbix-mariadb-nginx-raspbian-stretch && chmod +x install-zabbix-server.sh.sh && time ./install-zabbix-server.sh
+
 
 apt-get update -y
 apt-get dist-upgrade -y
