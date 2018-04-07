@@ -106,7 +106,7 @@ echo
 sed -i "s/^DBUser=.*$/DBUser=zabbix/" /usr/local/etc/zabbix_server.conf
 sed -i "s/^.*DBPassword=.*$/DBPassword=drFJ7xx5MNTbqJ39/" /usr/local/etc/zabbix_server.conf
 sed -i "s/^.*CacheUpdateFrequency=.*$/CacheUpdateFrequency=4/" /usr/local/etc/zabbix_server.conf
-sed -i "s/^.*Timeout=.*$/Timeout=30/" /usr/local/etc/zabbix_server.conf
+sed -i "s/^Timeout=.*$/Timeout=30/" /usr/local/etc/zabbix_server.conf
 sed -i "s/^LogFile=.*$/LogFile=\/tmp\/zabbix_server.log/" /usr/local/etc/zabbix_server.conf
 sed -i "s/^.*SSHKeyLocation=.*$/SSHKeyLocation=\/home\/zabbix\/.ssh/" /usr/local/etc/zabbix_server.conf
 
