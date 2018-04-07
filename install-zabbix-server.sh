@@ -1,10 +1,19 @@
 #!/bin/bash
 #sudo su
-#apt-get update -y && apt-get install git -y && cd && git clone https://github.com/catonrug/zabbix-mariadb-nginx-raspbian-stretch.git && cd zabbix-mariadb-nginx-raspbian-stretch && chmod +x install-zabbix-server.sh && time ./install-zabbix-server.sh
-
+#apt-get update -y
+#apt-get install git -y
+#cd
+#mkdir -p ~/git
+#cd ~/git
+#git clone https://github.com/catonrug/zabbix-mariadb-nginx-raspbian-stretch.git
+#git clone ssh://git@github.com/catonrug/zabbix-mariadb-nginx-raspbian-stretch.git
+#cd zabbix-mariadb-nginx-raspbian-stretch
+#chmod +x install-zabbix-server.sh
+#time ./install-zabbix-server.sh
 
 apt-get update -y
 apt-get dist-upgrade -y
+apt-get update -y
 apt-get install mysql-server -y
 apt-get install mysql-client -y
 apt-get install default-libmysqlclient-dev -y
@@ -98,9 +107,13 @@ echo
 
 sed -i "s/^DBUser=.*$/DBUser=zabbix/" /usr/local/etc/zabbix_server.conf
 sed -i "s/^.*DBPassword=.*$/DBPassword=drFJ7xx5MNTbqJ39/" /usr/local/etc/zabbix_server.conf
-#sed -i "s/^.*AlertScriptsPath=.*$/AlertScriptsPath=\/var\/zabbix\/alertscripts/" /usr/local/etc/zabbix_server.conf
-#sed -i "s/^.*ExternalScripts=.*$/ExternalScripts=\/var\/zabbix\/externalscripts/" /usr/local/etc/zabbix_server.conf
+sed -i "s/^.*EnableRemoteCommands=.*$/EnableRemoteCommands=1/" /usr/local/etc/zabbix_server.conf
+sed -i "s/^.*LogRemoteCommands=.*$/LogRemoteCommands=1/" /usr/local/etc/zabbix_server.conf
 sed -i "s/^LogFile=.*$/LogFile=\/tmp\/zabbix_server.log/" /usr/local/etc/zabbix_server.conf
+
+apt-get install fping -y
+sed -i "s/^.*FpingLocation=.*$/FpingLocation=\/usr\/bin\/fping/" /usr/local/etc/zabbix_server.conf
+
 
 grep -v "^#\|^$" /usr/local/etc/zabbix_server.conf
 echo
@@ -131,8 +144,7 @@ sed -i "s/^.*date.timezone =.*$/date.timezone = Europe\/Riga/g" /etc/php/7.0/fpm
 grep "date.timezone" /etc/php/7.0/fpm/php.ini
 echo
 
-/etc/init.d/zabbix-server restart
-/etc/init.d/zabbix-agent restart
+systemctl start {zabbix-server,zabbix-agent}
 /etc/init.d/php7.0-fpm restart
 /etc/init.d/nginx restart
 
