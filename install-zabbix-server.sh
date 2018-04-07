@@ -67,17 +67,15 @@ apt-get install php7.0-xml -y
 apt-get install php7.0-mbstring -y
 apt-get install php7.0-bcmath -y
 
+apt-get install unixodbc-dev -y
+apt-get install libssl-dev -y #configure: error: OpenSSL library libssl or libcrypto not found
+
 mysql -h localhost -uroot -ppassword -P 3306 -s <<< 'CREATE DATABASE zabbix CHARACTER SET UTF8'
 mysql -h localhost -uroot -ppassword -P 3306 -s <<< 'GRANT ALL PRIVILEGES on zabbix.* to "zabbix"@"localhost" IDENTIFIED BY "drFJ7xx5MNTbqJ39"'
 
 
 groupadd zabbix
 useradd -g zabbix zabbix
-#mkdir -p /var/log/zabbix
-#chown -R zabbix:zabbix /var/log/zabbix/
-#mkdir -p /var/zabbix/alertscripts
-#mkdir -p /var/zabbix/externalscripts
-#chown -R zabbix:zabbix /var/zabbix/
 
 wget http://downloads.sourceforge.net/project/zabbix/ZABBIX%20Latest%20Stable/3.4.8/zabbix-3.4.8.tar.gz
 tar -vzxf zabbix-*.tar.gz -C ~
@@ -92,7 +90,7 @@ echo processing data.sql
 time mysql -uzabbix -pdrFJ7xx5MNTbqJ39 zabbix < data.sql
 
 cd ~/zabbix-*/
-./configure --enable-server --enable-agent --with-mysql --with-libcurl --with-libxml2 --with-ssh2 --with-net-snmp --with-openipmi --with-jabber
+./configure --enable-server --enable-agent --with-mysql --with-libcurl --with-libxml2 --with-ssh2 --with-net-snmp --with-openipmi --with-jabber --with-openssl --with-unixodbc
 
 time make install &&
 
@@ -107,13 +105,13 @@ echo
 
 sed -i "s/^DBUser=.*$/DBUser=zabbix/" /usr/local/etc/zabbix_server.conf
 sed -i "s/^.*DBPassword=.*$/DBPassword=drFJ7xx5MNTbqJ39/" /usr/local/etc/zabbix_server.conf
-sed -i "s/^.*EnableRemoteCommands=.*$/EnableRemoteCommands=1/" /usr/local/etc/zabbix_server.conf
-sed -i "s/^.*LogRemoteCommands=.*$/LogRemoteCommands=1/" /usr/local/etc/zabbix_server.conf
+sed -i "s/^.*CacheUpdateFrequency=.*$/CacheUpdateFrequency=4/" /usr/local/etc/zabbix_server.conf
+sed -i "s/^.*Timeout=.*$/Timeout=30/" /usr/local/etc/zabbix_server.conf
 sed -i "s/^LogFile=.*$/LogFile=\/tmp\/zabbix_server.log/" /usr/local/etc/zabbix_server.conf
+sed -i "s/^.*SSHKeyLocation=.*$/SSHKeyLocation=\/home\/zabbix\/.ssh/" /usr/local/etc/zabbix_server.conf
 
 apt-get install fping -y
 sed -i "s/^.*FpingLocation=.*$/FpingLocation=\/usr\/bin\/fping/" /usr/local/etc/zabbix_server.conf
-
 
 grep -v "^#\|^$" /usr/local/etc/zabbix_server.conf
 echo
