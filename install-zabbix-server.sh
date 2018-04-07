@@ -64,17 +64,17 @@ mysql -h localhost -uroot -ppassword -P 3306 -s <<< 'GRANT ALL PRIVILEGES on zab
 
 groupadd zabbix
 useradd -g zabbix zabbix
-mkdir -p /var/log/zabbix
-chown -R zabbix:zabbix /var/log/zabbix/
-mkdir -p /var/zabbix/alertscripts
-mkdir -p /var/zabbix/externalscripts
-chown -R zabbix:zabbix /var/zabbix/
+#mkdir -p /var/log/zabbix
+#chown -R zabbix:zabbix /var/log/zabbix/
+#mkdir -p /var/zabbix/alertscripts
+#mkdir -p /var/zabbix/externalscripts
+#chown -R zabbix:zabbix /var/zabbix/
 
-wget http://downloads.sourceforge.net/project/zabbix/ZABBIX%20Latest%20Stable/3.4.4/zabbix-3.4.4.tar.gz
-tar -vzxf zabbix-3*.tar.gz -C ~
-cd ~/zabbix-3*/database/mysql
+wget http://downloads.sourceforge.net/project/zabbix/ZABBIX%20Latest%20Stable/3.4.8/zabbix-3.4.8.tar.gz
+tar -vzxf zabbix-*.tar.gz -C ~
+cd ~/zabbix-*/database/mysql
 
-cd ~/zabbix-3*/database/mysql
+cd ~/zabbix-*/database/mysql
 echo processing schema.sql
 time mysql -uzabbix -pdrFJ7xx5MNTbqJ39 zabbix < schema.sql
 echo processing images.sql
@@ -82,12 +82,12 @@ time mysql -uzabbix -pdrFJ7xx5MNTbqJ39 zabbix < images.sql
 echo processing data.sql
 time mysql -uzabbix -pdrFJ7xx5MNTbqJ39 zabbix < data.sql
 
-cd ~/zabbix-3*/
+cd ~/zabbix-*/
 ./configure --enable-server --enable-agent --with-mysql --with-libcurl --with-libxml2 --with-ssh2 --with-net-snmp --with-openipmi --with-jabber
 
 time make install &&
 
-cp ~/zabbix-3*/misc/init.d/debian/* /etc/init.d/
+cp ~/zabbix-*/misc/init.d/debian/* /etc/init.d/
 
 update-rc.d zabbix-server defaults
 update-rc.d zabbix-agent defaults
@@ -98,15 +98,15 @@ echo
 
 sed -i "s/^DBUser=.*$/DBUser=zabbix/" /usr/local/etc/zabbix_server.conf
 sed -i "s/^.*DBPassword=.*$/DBPassword=drFJ7xx5MNTbqJ39/" /usr/local/etc/zabbix_server.conf
-sed -i "s/^.*AlertScriptsPath=.*$/AlertScriptsPath=\/var\/zabbix\/alertscripts/" /usr/local/etc/zabbix_server.conf
-sed -i "s/^.*ExternalScripts=.*$/ExternalScripts=\/var\/zabbix\/externalscripts/" /usr/local/etc/zabbix_server.conf
-sed -i "s/^LogFile=.*$/LogFile=\/var\/log\/zabbix\/zabbix_server.log/" /usr/local/etc/zabbix_server.conf
+#sed -i "s/^.*AlertScriptsPath=.*$/AlertScriptsPath=\/var\/zabbix\/alertscripts/" /usr/local/etc/zabbix_server.conf
+#sed -i "s/^.*ExternalScripts=.*$/ExternalScripts=\/var\/zabbix\/externalscripts/" /usr/local/etc/zabbix_server.conf
+sed -i "s/^LogFile=.*$/LogFile=\/tmp\/zabbix_server.log/" /usr/local/etc/zabbix_server.conf
 
 grep -v "^#\|^$" /usr/local/etc/zabbix_server.conf
 echo
 
 mkdir /var/www/html/zabbix
-cd ~/zabbix-3*/frontends/php/
+cd ~/zabbix-*/frontends/php/
 cp -a . /var/www/html/zabbix/
 chown -R www-data:www-data /var/www
 
