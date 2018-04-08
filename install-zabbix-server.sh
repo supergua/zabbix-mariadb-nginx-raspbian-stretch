@@ -127,17 +127,56 @@ grep -v "^#\|^$" /usr/local/etc/zabbix_server.conf
 echo
 
 sed -i "s/^DBUser=.*$/DBUser=zabbix/" /usr/local/etc/zabbix_server.conf
-sed -i "s/^.*DBPassword=.*$/DBPassword=drFJ7xx5MNTbqJ39/" /usr/local/etc/zabbix_server.conf
-sed -i "s/^.*CacheUpdateFrequency=.*$/CacheUpdateFrequency=4/" /usr/local/etc/zabbix_server.conf
 sed -i "s/^Timeout=.*$/Timeout=30/" /usr/local/etc/zabbix_server.conf
 sed -i "s/^LogFile=.*$/LogFile=\/tmp\/zabbix_server.log/" /usr/local/etc/zabbix_server.conf
-sed -i "s/^.*SSHKeyLocation=.*$/SSHKeyLocation=\/home\/zabbix\/.ssh/" /usr/local/etc/zabbix_server.conf
+
+grep "^DBPassword=" /usr/local/etc/zabbix_server.conf > /dev/null
+if [ $? -eq 0 ]; then
+sed -i "s/^DBPassword=.*$/DBPassword=drFJ7xx5MNTbqJ39/" /usr/local/etc/zabbix_server.conf
+else
+echo "DBPassword=drFJ7xx5MNTbqJ39" >> /usr/local/etc/zabbix_server.conf
+fi
+
+grep "^CacheUpdateFrequency=" /usr/local/etc/zabbix_server.conf > /dev/null
+if [ $? -eq 0 ]; then
+sed -i "s/^CacheUpdateFrequency=.*$/CacheUpdateFrequency=4/" /usr/local/etc/zabbix_server.conf
+else
+echo "CacheUpdateFrequency=4" >> /usr/local/etc/zabbix_server.conf
+fi
+
+grep "^SSHKeyLocation=" /usr/local/etc/zabbix_server.conf > /dev/null
+if [ $? -eq 0 ]; then
+sed -i "s/^SSHKeyLocation=.*$/SSHKeyLocation=\/home\/zabbix\/.ssh/" /usr/local/etc/zabbix_server.conf
+else
+echo "SSHKeyLocation=/home/zabbix/.ssh" >> /usr/local/etc/zabbix_server.conf
+fi
 
 apt-get install fping -y
 sed -i "s/^.*FpingLocation=.*$/FpingLocation=\/usr\/bin\/fping/" /usr/local/etc/zabbix_server.conf
 
 grep -v "^#\|^$" /usr/local/etc/zabbix_server.conf
 echo
+
+#do some agent configuratiuon
+
+grep "^EnableRemoteCommands=" /usr/local/etc/zabbix_agentd.conf > /dev/null
+if [ $? -eq 0 ]; then
+sed -i "s/^EnableRemoteCommands=.*$/EnableRemoteCommands=1/" /usr/local/etc/zabbix_agentd.conf
+else
+echo "EnableRemoteCommands=1" >> /usr/local/etc/zabbix_agentd.conf
+fi
+
+grep "^LogRemoteCommands=" /usr/local/etc/zabbix_agentd.conf > /dev/null
+if [ $? -eq 0 ]; then
+sed -i "s/^LogRemoteCommands=.*$/LogRemoteCommands=1/" /usr/local/etc/zabbix_agentd.conf
+else
+echo "LogRemoteCommands=1" >> /usr/local/etc/zabbix_agentd.conf
+fi
+
+grep "^Include=" /usr/local/etc/zabbix_agentd.conf > /dev/null
+if [ $? -ne 0 ]; then
+echo "Include=/usr/local/etc/zabbix_agentd.conf.d/*.conf" >> /usr/local/etc/zabbix_agentd.conf
+fi
 
 mkdir /var/www/html/zabbix
 cd ~/zabbix-*/frontends/php/
