@@ -18,6 +18,8 @@ apt-get install nginx -y
 apt-get install fcgiwrap -y
 echo
 
+apt-get install bc -y #for external SSL check
+
 #aditional tools. not necessary for zabbix server
 apt-get install tree -y
 apt-get install vim -y
