@@ -1,15 +1,7 @@
 #!/bin/bash
 #sudo su
-#apt-get update -y
-#apt-get install git -y
-#cd
-#mkdir -p ~/git
-#cd ~/git
-#git clone https://github.com/catonrug/zabbix-mariadb-nginx-raspbian-stretch.git
-#git clone ssh://git@github.com/catonrug/zabbix-mariadb-nginx-raspbian-stretch.git
-#cd zabbix-mariadb-nginx-raspbian-stretch
-#chmod +x install-zabbix-server.sh
-#time ./install-zabbix-server.sh
+#apt-get update -y && apt-get install git -y && mkdir -p ~/git && cd ~/git && git clone https://github.com/catonrug/zabbix-mariadb-nginx-raspbian-stretch.git && cd zabbix-mariadb-nginx-raspbian-stretch && time ./install-zabbix-server.sh
+
 
 apt-get update -y
 apt-get dist-upgrade -y
@@ -98,12 +90,36 @@ cd ~/zabbix-*/
 
 time make install &&
 
-cp ~/zabbix-*/misc/init.d/debian/* /etc/init.d/
-
-update-rc.d zabbix-server defaults
-update-rc.d zabbix-agent defaults
-
+#start zabbix server at reboot
+cat > /etc/init.d/zabbix-server << EOF
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          zabbix-server
+# Required-Start:    \$remote_fs \$network
+# Required-Stop:     \$remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Should-Start:      mysql
+# Should-Stop:       mysql
+# Short-Description: Start zabbix-server daemon
+### END INIT INFO
+EOF
+grep -v "^#\!\/bin\/sh$" ~/zabbix-*/misc/init.d/debian/zabbix-server >> /etc/init.d/zabbix-server
 systemctl enable zabbix-server
+
+#start zabbix agent at reboot
+cat > /etc/init.d/zabbix-agent << EOF
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          zabbix-agent
+# Required-Start:    \$remote_fs \$network
+# Required-Stop:     \$remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start zabbix-agent daemon
+### END INIT INFO
+EOF
+grep -v "^#\!\/bin\/sh$" ~/zabbix-*/misc/init.d/debian/zabbix-agent >> /etc/init.d/zabbix-agent
 systemctl enable zabbix-agent
 
 #show existing configuration
@@ -149,7 +165,10 @@ sed -i "s/^.*date.timezone =.*$/date.timezone = Europe\/Riga/g" /etc/php/7.0/fpm
 grep "date.timezone" /etc/php/7.0/fpm/php.ini
 echo
 
+if [ -f "/home/pi/dbdump.bz2" ]; then
+bzcat /home/pi/dbdump.bz2 | sudo mysql zabbix
+fi
+
 systemctl start {zabbix-server,zabbix-agent}
-/etc/init.d/php7.0-fpm restart
-/etc/init.d/nginx restart
+systemctl restart {php7.0-fpm,nginx}
 
