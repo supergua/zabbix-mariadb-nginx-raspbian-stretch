@@ -26,6 +26,10 @@ apt-get install nginx -y
 apt-get install fcgiwrap -y
 echo
 
+#aditional tools. not necessary for zabbix server
+apt-get install tree -y
+apt-get install vim -y
+
 grep 'process.max' /etc/php/7.0/fpm/php-fpm.conf
 sed -i "s/^.*process\.max = .*$/process.max = 2/" /etc/php/7.0/fpm/php-fpm.conf
 grep 'process.max' /etc/php/7.0/fpm/php-fpm.conf
@@ -98,6 +102,9 @@ cp ~/zabbix-*/misc/init.d/debian/* /etc/init.d/
 
 update-rc.d zabbix-server defaults
 update-rc.d zabbix-agent defaults
+
+systemctl enable zabbix-server
+systemctl enable zabbix-agent
 
 #show existing configuration
 grep -v "^#\|^$" /usr/local/etc/zabbix_server.conf
