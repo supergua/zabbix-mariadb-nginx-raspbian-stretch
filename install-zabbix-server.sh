@@ -18,13 +18,13 @@ apt-get install nginx -y
 apt-get install fcgiwrap -y
 echo
 
-apt-get install bc -y #for external SSL check
+apt-get install bc -y #to work with external SSL check zabbix template
 
 #aditional tools. not necessary for zabbix server
-apt-get install tree -y
-apt-get install vim -y
+apt-get install tree -y #list direcotry structrure really beautifully with tree -a
+apt-get install vim -y #colored vi editor
 apt-get install apt-file -y #for searching which package include specific binary
-
+apt-get install snmp -y #to install snmpwalk utility
 
 grep 'process.max' /etc/php/7.0/fpm/php-fpm.conf
 sed -i "s/^.*process\.max = .*$/process.max = 2/" /etc/php/7.0/fpm/php-fpm.conf
