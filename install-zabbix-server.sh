@@ -23,6 +23,8 @@ apt-get install bc -y #for external SSL check
 #aditional tools. not necessary for zabbix server
 apt-get install tree -y
 apt-get install vim -y
+apt-get install apt-file -y #for searching which package include specific binary
+
 
 grep 'process.max' /etc/php/7.0/fpm/php-fpm.conf
 sed -i "s/^.*process\.max = .*$/process.max = 2/" /etc/php/7.0/fpm/php-fpm.conf
