@@ -109,6 +109,7 @@ cat > /etc/init.d/zabbix-server << EOF
 ### END INIT INFO
 EOF
 grep -v "^#\!\/bin\/sh$" ~/zabbix-*/misc/init.d/debian/zabbix-server >> /etc/init.d/zabbix-server
+chmod +x /etc/init.d/zabbix-server
 systemctl enable zabbix-server
 
 #start zabbix agent at reboot
@@ -124,6 +125,7 @@ cat > /etc/init.d/zabbix-agent << EOF
 ### END INIT INFO
 EOF
 grep -v "^#\!\/bin\/sh$" ~/zabbix-*/misc/init.d/debian/zabbix-agent >> /etc/init.d/zabbix-agent
+chmod +x /etc/init.d/zabbix-agent
 systemctl enable zabbix-agent
 
 #show existing configuration
