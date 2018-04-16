@@ -20,6 +20,10 @@ echo
 
 apt-get install bc -y #to work with external SSL check zabbix template
 
+#backup solution for google drive. https://catonrug.blogspot.com/2016/01/upload-file-to-google-drive-raspbian-command-line.html
+apt-get install python-pip -y
+pip install --upgrade google-api-python-client
+
 #aditional tools. not necessary for zabbix server
 apt-get install tree -y #list direcotry structrure really beautifully with tree -a
 apt-get install vim -y #colored vi editor
@@ -217,6 +221,8 @@ if [ ! -d "/home/pi/backup" ]; then
 cd /home/pi/backup
 cp -R * /
 
+chown -R pi:pi /home/pi
+
 if [ -f "/home/pi/dbdump.bz2" ]; then
 bzcat /home/pi/dbdump.bz2 | sudo mysql zabbix
 fi
@@ -239,6 +245,12 @@ chmod 770 /usr/bin/certbot
 #integrate some certbot settings
 mkdir -p /etc/letsencrypt
 echo renew-hook = systemctl reload nginx> /etc/letsencrypt/cli.ini
+
+#set google uploader executable
+chmod +x /home/pi/uploader.py
+
+#fix crontab permissions
+chmod +x /etc/cron.daily/backup-zabbix-db
 
 #remove symlink - default nginx sites
 unlink /etc/nginx/sites-enabled/default
