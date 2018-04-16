@@ -24,6 +24,9 @@ apt-get install bc -y #to work with external SSL check zabbix template
 apt-get install python-pip -y
 pip install --upgrade google-api-python-client
 
+#additional json library. usage for example https://catonrug.blogspot.com/2018/03/show-isp-for-zabbix-active-agents.html
+apt-get install jq -y
+
 #aditional tools. not necessary for zabbix server
 apt-get install tree -y #list direcotry structrure really beautifully with tree -a
 apt-get install vim -y #colored vi editor
