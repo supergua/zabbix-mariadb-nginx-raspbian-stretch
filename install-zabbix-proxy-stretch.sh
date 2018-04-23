@@ -5,6 +5,23 @@
 apt-get update -y
 apt-get dist-upgrade -y
 apt-get update -y
+
+apt-get install bc -y #to work with external SSL check zabbix template
+
+#backup solution to google drive 
+#https://catonrug.blogspot.com/2016/01/upload-file-to-google-drive-raspbian-command-line.html
+apt-get install python-pip -y
+pip install --upgrade google-api-python-client
+
+#additional json library. usage for example https://catonrug.blogspot.com/2018/03/show-isp-for-zabbix-active-agents.html
+apt-get install jq -y
+
+#aditional tools. not necessary for zabbix server
+apt-get install tree -y #list direcotry structrure really beautifully with tree -a
+apt-get install vim -y #colored vi editor
+apt-get install apt-file -y #for searching which package include specific binary
+apt-get install snmp -y #to install snmpwalk utility
+
 apt-get install mysql-server -y
 apt-get install mysql-client -y
 apt-get install default-libmysqlclient-dev -y
@@ -40,11 +57,9 @@ cd ~/zabbix-*/
 
 
 groupadd zabbix
-useradd -g zabbix zabbix
-
+useradd -g zabbix -d /var/lib/zabbix -s /usr/sbin/nologin zabbix
 
 cd ~/zabbix-*/
-./configure --enable-server --enable-agent --with-mysql --with-libcurl --with-libxml2 --with-ssh2 --with-net-snmp --with-openipmi --with-jabber --with-openssl --with-unixodbc
 
 groupadd zabbix
 useradd -g zabbix zabbix
@@ -53,21 +68,22 @@ useradd -g zabbix zabbix
 time make install &&
 
 #start zabbix server at reboot
-cat > /etc/init.d/zabbix-server << EOF
+cat > /etc/init.d/zabbix-proxy << EOF
 #!/bin/sh
 ### BEGIN INIT INFO
-# Provides:          zabbix-server
+# Provides:          zabbix-proxy
 # Required-Start:    \$remote_fs \$network
 # Required-Stop:     \$remote_fs
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # Should-Start:      mysql
 # Should-Stop:       mysql
-# Short-Description: Start zabbix-server daemon
+# Short-Description: Start zabbix-proxy daemon
 ### END INIT INFO
 EOF
-grep -v "^#\!\/bin\/sh$" ~/zabbix-*/misc/init.d/debian/zabbix-server >> /etc/init.d/zabbix-server
-chmod +x /etc/init.d/zabbix-server
+grep -v "^#\!\/bin\/sh$" ~/zabbix-*/misc/init.d/debian/zabbix-server >> /etc/init.d/zabbix-proxy
+sed -i "s/server/proxy/g" /etc/init.d/zabbix-proxy
+chmod +x /etc/init.d/zabbix-proxy
 
 #start zabbix agent at reboot
 cat > /etc/init.d/zabbix-agent << EOF
@@ -85,90 +101,106 @@ grep -v "^#\!\/bin\/sh$" ~/zabbix-*/misc/init.d/debian/zabbix-agent >> /etc/init
 chmod +x /etc/init.d/zabbix-agent
 
 systemctl daemon-reload
-systemctl enable zabbix-server
+#allow to run service at startup
+systemctl enable zabbix-proxy
 systemctl enable zabbix-agent
 
 #show existing configuration
-grep -v "^#\|^$" /usr/local/etc/zabbix_server.conf
+proxy=/usr/local/etc/zabbix_proxy.conf
+
+grep -v "^#\|^$" $proxy
 echo
 
-sed -i "s/^DBUser=.*$/DBUser=zabbix/" /usr/local/etc/zabbix_server.conf
-sed -i "s/^Timeout=.*$/Timeout=30/" /usr/local/etc/zabbix_server.conf
-sed -i "s/^LogFile=.*$/LogFile=\/tmp\/zabbix_server.log/" /usr/local/etc/zabbix_server.conf
-
-grep "^DBPassword=" /usr/local/etc/zabbix_server.conf > /dev/null
+#what is the server name of zabbix server
+sed -i "s/^Server=.*$/Server=ec2-35-166-97-138.us-west-2.compute.amazonaws.com/" $proxy
+#set hostname the same as systems
+#sed -i "s/^Hostname=.*$/Hostname=ProxyHome/" $proxy
+sed -i "s/^Hostname=.*$/Hostname=$(ifconfig | egrep -o -m1 ":..:..:.. " | sed "s/://g")/" $proxy
+#database username
+sed -i "s/^DBUser=.*$/DBUser=zabbix/" $proxy
+#set db password
+grep "^DBPassword=" $proxy > /dev/null
 if [ $? -eq 0 ]; then
-sed -i "s/^DBPassword=.*$/DBPassword=drFJ7xx5MNTbqJ39/" /usr/local/etc/zabbix_server.conf
+sed -i "s/^DBPassword=.*$/DBPassword=drFJ7xx5MNTbqJ39/" $proxy
 else
-echo "DBPassword=drFJ7xx5MNTbqJ39" >> /usr/local/etc/zabbix_server.conf
+echo "DBPassword=drFJ7xx5MNTbqJ39" >> $proxy
 fi
 
-grep "^CacheUpdateFrequency=" /usr/local/etc/zabbix_server.conf > /dev/null
+sed -i "s/^Timeout=.*$/Timeout=30/" $proxy
+sed -i "s/^LogFile=.*$/LogFile=\/tmp\/zabbix_proxy.log/" $proxy
+
+
+grep "^CacheUpdateFrequency=" $proxy > /dev/null
 if [ $? -eq 0 ]; then
-sed -i "s/^CacheUpdateFrequency=.*$/CacheUpdateFrequency=4/" /usr/local/etc/zabbix_server.conf
+sed -i "s/^CacheUpdateFrequency=.*$/CacheUpdateFrequency=4/" $proxy
 else
-echo "CacheUpdateFrequency=4" >> /usr/local/etc/zabbix_server.conf
+echo "CacheUpdateFrequency=4" >> $proxy
 fi
 
-grep "^SSHKeyLocation=" /usr/local/etc/zabbix_server.conf > /dev/null
+grep "^SSHKeyLocation=" $proxy > /dev/null
 if [ $? -eq 0 ]; then
-sed -i "s/^SSHKeyLocation=.*$/SSHKeyLocation=\/home\/zabbix\/.ssh/" /usr/local/etc/zabbix_server.conf
+sed -i "s/^SSHKeyLocation=.*$/SSHKeyLocation=\/home\/zabbix\/.ssh/" $proxy
 else
-echo "SSHKeyLocation=/home/zabbix/.ssh" >> /usr/local/etc/zabbix_server.conf
+echo "SSHKeyLocation=/home/zabbix/.ssh" >> $proxy
 fi
 
 apt-get install fping -y
-sed -i "s/^.*FpingLocation=.*$/FpingLocation=\/usr\/bin\/fping/" /usr/local/etc/zabbix_server.conf
+grep "^FpingLocation=" $proxy > /dev/null
+if [ $? -eq 0 ]; then
+sed -i "s/^FpingLocation=.*$/FpingLocation=\/usr\/bin\/fping/" $proxy
+else
+echo "FpingLocation=/usr/bin/fping" >> $proxy
+fi
 
-grep -v "^#\|^$" /usr/local/etc/zabbix_server.conf
+grep "^EnableRemoteCommands=" $proxy > /dev/null
+if [ $? -eq 0 ]; then
+sed -i "s/^EnableRemoteCommands=.*$/EnableRemoteCommands=1/" $proxy
+else
+echo "EnableRemoteCommands=1" >> $proxy
+fi
+
+grep "^LogRemoteCommands=" $proxy > /dev/null
+if [ $? -eq 0 ]; then
+sed -i "s/^LogRemoteCommands=.*$/LogRemoteCommands=1/" $proxy
+else
+echo "LogRemoteCommands=1" >> $proxy
+fi
+
+
+
+
+
+grep -v "^#\|^$" $proxy
 echo
 
 #do some agent configuratiuon
+agent=/usr/local/etc/zabbix_agentd.conf
+grep -v "^#\|^$" $agent
 
-grep "^EnableRemoteCommands=" /usr/local/etc/zabbix_agentd.conf > /dev/null
+#set hostname
+sed -i "s/^Hostname=.*$/Hostname=$(hostname)/" $proxy
+
+grep "^EnableRemoteCommands=" $agent > /dev/null
 if [ $? -eq 0 ]; then
-sed -i "s/^EnableRemoteCommands=.*$/EnableRemoteCommands=1/" /usr/local/etc/zabbix_agentd.conf
+sed -i "s/^EnableRemoteCommands=.*$/EnableRemoteCommands=1/" $agent
 else
-echo "EnableRemoteCommands=1" >> /usr/local/etc/zabbix_agentd.conf
+echo "EnableRemoteCommands=1" >> $agent
 fi
 
-grep "^LogRemoteCommands=" /usr/local/etc/zabbix_agentd.conf > /dev/null
+grep "^LogRemoteCommands=" $agent > /dev/null
 if [ $? -eq 0 ]; then
-sed -i "s/^LogRemoteCommands=.*$/LogRemoteCommands=1/" /usr/local/etc/zabbix_agentd.conf
+sed -i "s/^LogRemoteCommands=.*$/LogRemoteCommands=1/" $agent
 else
-echo "LogRemoteCommands=1" >> /usr/local/etc/zabbix_agentd.conf
+echo "LogRemoteCommands=1" >> $agent
 fi
 
-grep "^Include=" /usr/local/etc/zabbix_agentd.conf > /dev/null
+grep "^Include=" $agent > /dev/null
 if [ $? -ne 0 ]; then
-echo "Include=/usr/local/etc/zabbix_agentd.conf.d/*.conf" >> /usr/local/etc/zabbix_agentd.conf
+echo "Include=$agent.d/*.conf" >> $agent
 fi
 
-mkdir /var/www/html/zabbix
-cd ~/zabbix-*/frontends/php/
-cp -a . /var/www/html/zabbix/
-chown -R www-data:www-data /var/www
+grep -v "^#\|^$" $agent
 
-cd
-grep post_max_size /etc/php/7.0/fpm/php.ini
-sed -i "s/^post_max_size = .*$/post_max_size = 16M/" /etc/php/7.0/fpm/php.ini
-grep post_max_size /etc/php/7.0/fpm/php.ini
-echo
-
-grep max_execution_time /etc/php/7.0/fpm/php.ini
-sed -i "s/^max_execution_time = .*$/max_execution_time = 300/" /etc/php/7.0/fpm/php.ini
-grep max_execution_time /etc/php/7.0/fpm/php.ini
-echo
-
-grep max_input_time /etc/php/7.0/fpm/php.ini
-sed -i "s/^max_input_time = .*$/max_input_time = 300/g" /etc/php/7.0/fpm/php.ini
-grep max_input_time /etc/php/7.0/fpm/php.ini
-echo
-
-grep "date.timezone" /etc/php/7.0/fpm/php.ini
-sed -i "s/^.*date.timezone =.*$/date.timezone = Europe\/Riga/g" /etc/php/7.0/fpm/php.ini
-grep "date.timezone" /etc/php/7.0/fpm/php.ini
-echo
 
 #restore backup
 if [ ! -d "/home/pi/backup" ]; then
@@ -177,9 +209,6 @@ cp -R * /
 
 chown -R pi:pi /home/pi
 
-if [ -f "/home/pi/dbdump.bz2" ]; then
-bzcat /home/pi/dbdump.bz2 | sudo mysql zabbix
-fi
 
 #install git keys
 #allow only owner read and write to these keys
@@ -193,42 +222,20 @@ chown -R zabbix:zabbix /usr/local/share/zabbix
 chmod 770 /usr/local/share/zabbix/externalscripts/*
 chmod 600 /home/zabbix/.my.cnf
 
-#install certboot agentls
-curl -s https://dl.eff.org/certbot-auto > /usr/bin/certbot
-chmod 770 /usr/bin/certbot
-#integrate some certbot settings
-mkdir -p /etc/letsencrypt
-echo renew-hook = systemctl reload nginx> /etc/letsencrypt/cli.ini
-
 #set google uploader executable
 chmod +x /home/pi/uploader.py
 
-#fix crontab permissions
-chmod +x /etc/cron.daily/backup-zabbix-db
-
-#remove symlink - default nginx sites
-unlink /etc/nginx/sites-enabled/default
-ln -s /etc/nginx/sites-available/5d61050b753b.sn.mynetname.net /etc/nginx/sites-enabled/5d61050b753b.sn.mynetname.net
-
 fi
 
-systemctl start {zabbix-server,zabbix-agent}
-systemctl restart {php7.0-fpm,nginx}
+echo
+grep -v "^#\|^$" $proxy
+
+echo
+grep -v "^#\|^$" $agent
 
 
-apt-get install bc -y #to work with external SSL check zabbix template
+systemctl start {zabbix-proxy,zabbix-agent}
 
-#backup solution for google drive. https://catonrug.blogspot.com/2016/01/upload-file-to-google-drive-raspbian-command-line.html
-apt-get install python-pip -y
-pip install --upgrade google-api-python-client
 
-#additional json library. usage for example https://catonrug.blogspot.com/2018/03/show-isp-for-zabbix-active-agents.html
-apt-get install jq -y
-
-#aditional tools. not necessary for zabbix server
-apt-get install tree -y #list direcotry structrure really beautifully with tree -a
-apt-get install vim -y #colored vi editor
-apt-get install apt-file -y #for searching which package include specific binary
-apt-get install snmp -y #to install snmpwalk utility
 
 
